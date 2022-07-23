@@ -143,8 +143,8 @@ function removeFirstOccurrences(str, del) {
  *   '<span>' => 'span'
  *   '<a>' => 'a'
  */
-function unbracketTag(/* str */) {
-  throw new Error('Not implemented');
+function unbracketTag(str) {
+  return str.replace(/[^a-zа-яё]/gi, '');
 }
 
 
