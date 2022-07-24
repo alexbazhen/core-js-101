@@ -114,34 +114,88 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
+class MyElement {
+  constructor(value, type, parent) {
+    this.type = type;
+    this.value = value;
+    this.sym = '';
+    this.end = '';
+    if (this.type === 'elem') this.sym = '';
+    if (this.type === 'id') this.sym = '#';
+    if (this.type === 'class') this.sym = '.';
+    if (this.type === 'attr') {
+      this.sym = '[';
+      this.end = ']';
+    }
+    if (this.type === 'pseudoClass') this.sym = ':';
+    if (this.type === 'pseudoElement') this.sym = '::';
+    this.child = {};
+    this.parent = parent;
+    this.validError = 'Element, id and pseudo-element should not occur more then one time inside the selector';
+    this.partsError = 'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element';
+  }
+
+  element() {
+    if (this.type === 'elem') throw new Error(this.validError);
+    if (this.type !== 'elem') throw new Error(this.partsError);
+    return this.type;
+  }
+
+  id(val) {
+    if (this.type === 'id') throw new Error(this.validError);
+    if (this.type !== 'elem') throw new Error(this.partsError);
+    this.child = new MyElement(val, 'id', this);
+    return this.child;
+  }
+
+  class(val) {
+    if (this.type === 'attr' || this.type === 'pseudoClass' || this.type === 'pseudoElement') throw new Error(this.partsError);
+    this.child = new MyElement(val, 'class', this);
+    return this.child;
+  }
+
+  attr(val) {
+    if (this.type === 'pseudoClass' || this.type === 'pseudoElement') throw new Error(this.partsError);
+    this.child = new MyElement(val, 'attr', this);
+    return this.child;
+  }
+
+  pseudoClass(val) {
+    if (this.type === 'pseudoElement') throw new Error(this.partsError);
+    this.child = new MyElement(val, 'pseudoClass', this);
+    return this.child;
+  }
+
+  pseudoElement(val) {
+    if (this.type === 'pseudoElement') throw new Error(this.validError);
+    this.child = new MyElement(val, 'pseudoElement', this);
+    return this.child;
+  }
+
+  stringify() {
+    const par = this.parent ? this.parent.stringify() : '';
+    return `${par}${this.sym}${this.value}${this.end}`;
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
-  },
+  element: (value) => new MyElement(value, 'elem'),
 
-  id(/* value */) {
-    throw new Error('Not implemented');
-  },
+  id: (value) => new MyElement(value, 'id'),
 
-  class(/* value */) {
-    throw new Error('Not implemented');
-  },
+  class: (value) => new MyElement(value, 'class'),
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
-  },
+  attr: (value) => new MyElement(value, 'attr'),
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
-  },
+  pseudoClass: (value) => new MyElement(value, 'pseudoClass'),
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
-  },
+  pseudoElement: (value) => new MyElement(value, 'pseudoElement'),
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
-  },
+  combine: (selector1, combinator, selector2) => ({
+    stringify: () => `${selector1.stringify()} ${combinator} ${selector2.stringify()}`,
+  }),
+
+  stringify: () => `${this.element.stringify()}`,
 };
 
 
